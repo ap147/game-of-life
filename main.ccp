@@ -4,18 +4,20 @@ class cell{
 
 public:
     bool alive;
+    bool nextState;
 };
 
-class board{
+class board {
 
 public:
     // x, y
     int rows;
     int columns;
-    cell** cells;
-    int printBoard(){
-        for(int y = 0; y < columns; y++){
-            for(int x = 0; x < rows; x++){
+    cell **cells;
+
+    int printBoard() {
+        for (int y = 0; y < columns; y++) {
+            for (int x = 0; x < rows; x++) {
                 std::cout << cells[y][x].alive;
             }
             std::cout << "" << std::endl;
@@ -24,24 +26,20 @@ public:
         return 0;
     }
 
-    int setBoardValues(){
-        cells[0][0].alive = true;
-        cells[0][1].alive = true;
-        cells[0][2].alive = true;
-        cells[0][3].alive = true;
-        cells[0][4].alive = true;
-        cells[0][5].alive = true;
-        cells[1][1].alive = true;
+    int setBoardValues() {
         cells[1][2].alive = true;
+        cells[2][2].alive = true;
+        cells[3][2].alive = true;
     }
 
-    int populateBoard(){
+    int populateBoard() {
         std::cout << "Populating Board" << std::endl;
 
-        cells = new cell*[rows];
-        for(int i = 0; i < rows; ++i){
+        cells = new cell *[rows];
+        for (int i = 0; i < rows; ++i) {
             cells[i] = new cell[columns];
             cells[i][rows].alive = false;
+            cells[i][rows].nextState = false;
         }
 
         setBoardValues();
@@ -49,153 +47,196 @@ public:
         return 0;
     }
 
-    int checkLeft(int x, int y){
+    int checkLeft(int x, int y) {
 
         int neighbour;
         //left wrap
-        if(x == 0) {
+        if (x == 0) {
             int xSize = rows - 1;
             neighbour = xSize;
         }//mid
-        else{
-            neighbour = x -1;
+        else {
+            neighbour = x - 1;
         }
 
-        if(cells[y][neighbour].alive){
+        if (cells[y][neighbour].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkRight(int x, int y){
+
+    int checkRight(int x, int y) {
 
         int neighbour;
         //right wrap
-        if(x == (rows -1)) {
+        if (x == (rows - 1)) {
             neighbour = 0;
         }//mid
-        else{
+        else {
             neighbour = x + 1;
         }
-        if(cells[y][neighbour].alive){
+        if (cells[y][neighbour].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkTop(int x, int y){
+
+    int checkTop(int x, int y) {
         int neighbour;
 
         //top wrap
-        if(y == 0) {
+        if (y == 0) {
             neighbour = (columns - 1);
         }//mid
-        else{
+        else {
             neighbour = y - 1;
         }
 
-        if(cells[neighbour][x].alive){
+        if (cells[neighbour][x].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkBottom(int x, int y){
+
+    int checkBottom(int x, int y) {
         int neighbour;
 
         //bottom wrap
-        if(y == (columns-1)) {
+        if (y == (columns - 1)) {
             neighbour = 0;
         }//mid
-        else{
+        else {
             neighbour = y + 1;
         }
-        if(cells[neighbour][x].alive){
+
+        if (cells[neighbour][x].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkDiagonalTL(int x, int y){
+
+    int checkDiagonalTL(int x, int y) {
         int neighbourX;
         int neighbourY;
 
-        if(y != 0 && x != 0){
+        if (y == 0 && x == 0) {
+            neighbourX = rows - 1;
+            neighbourY = columns - 1;
+        } else if (y == 0) {
             neighbourX = x - 1;
-            neighbourY = y -1;
+            neighbourY = columns - 1;
+        } else if (x == 0) {
+            neighbourX = rows - 1;
+            neighbourY = y - 1;
+        } else {
+            neighbourX = x - 1;
+            neighbourY = y - 1;
         }
-        else{
-            return 0;
-        }
-        if(cells[neighbourY][neighbourX].alive){
+
+        if (cells[neighbourY][neighbourX].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkDiagonalTR(int x, int y){
+
+    int checkDiagonalTR(int x, int y) {
         int neighbourX;
         int neighbourY;
 
-        if(y != 0 && x != rows -1){
+        if (y == columns - 1 && x == rows - 1) {
+            neighbourX = 0;
+            neighbourY = columns - 1;
+        } else if (y == 0) {
+            neighbourX = x + 1;
+            neighbourY = columns - 1;
+        } else if (x == rows - 1) {
+            neighbourX = 0;
+            neighbourY = y - 1;
+        } else {
             neighbourX = x + 1;
             neighbourY = y - 1;
         }
-        else{
-            return 0;
-        }
-        if(cells[neighbourY][neighbourX].alive){
+
+        if (cells[neighbourY][neighbourX].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkDiagonalBL(int x, int y){
+
+    int checkDiagonalBL(int x, int y) {
         int neighbourX;
         int neighbourY;
-        if(y != columns -1 && x != 0){
+
+        if (y == columns - 1 && x == 0) {
+            neighbourX = rows - 1;
+            neighbourY = 0;
+        } else if (x == 0) {
+            neighbourX = rows - 1;
+            neighbourY = y + 1;
+        } else if (y == rows - 1) {
+            neighbourX = x - 1;
+            neighbourY = 0;
+        } else {
             neighbourX = x - 1;
             neighbourY = y + 1;
         }
-        else{
-            return 0;
-        }
-        if(cells[neighbourY][neighbourX].alive){
+
+        if (cells[neighbourY][neighbourX].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int checkDiagonalBR(int x, int y){
+
+    int checkDiagonalBR(int x, int y) {
         int neighbourX;
         int neighbourY;
-        if(y != columns -1 && x != rows -1){
+
+        if (y == columns - 1 && x == rows - 1) {
+            neighbourX = 0;      // 2
+            neighbourY = 0;
+        } else if (x == rows - 1) { // 1
+            neighbourX = 0;
+            neighbourY = y + 1;
+        } else if (y == rows - 1) { // 3
+            neighbourX = x + 1;
+            neighbourY = 0;
+        } else {
             neighbourX = x + 1;
             neighbourY = y + 1;
         }
-        else{
-            return 0;
-        }
-        if(cells[neighbourY][neighbourX].alive){
+
+        if (cells[neighbourY][neighbourX].alive) {
             return 1;
-        } else{
+        } else {
             return 0;
         }
     }
-    int cellNextCycle(int x, int y){
 
+    int getAmountofNeighbours(int x, int y) {
         int neighbours = 0;
 
-        neighbours = neighbours + checkLeft(x,y);
-        neighbours = neighbours + checkDiagonalTL(x,y);
-        neighbours = neighbours + checkTop(x,y);
-        neighbours = neighbours + checkDiagonalTR(x,y);
-        neighbours = neighbours + checkRight(x,y);
-        neighbours = neighbours + checkDiagonalBR(x,y);
-        neighbours = neighbours + checkBottom(x,y);
-        neighbours = neighbours + checkDiagonalBL(x,y);
+        neighbours = neighbours + checkLeft(x, y);
+        neighbours = neighbours + checkDiagonalTL(x, y);
+        neighbours = neighbours + checkTop(x, y);
+        neighbours = neighbours + checkDiagonalTR(x, y);
+        neighbours = neighbours + checkRight(x, y);
+        neighbours = neighbours + checkDiagonalBR(x, y);
+        neighbours = neighbours + checkBottom(x, y);
+        neighbours = neighbours + checkDiagonalBL(x, y);
 
+        return neighbours;
+    }
 
+    int cellNextCycle(int x, int y) {
+
+        int neighbours = getAmountofNeighbours(x, y);
         /*
     Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
     Any live cell with two or three live neighbours lives on to the next generation.
@@ -204,33 +245,44 @@ public:
     Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 */
         // Any live cell
-        if(cells[y][x].alive){
+        if (cells[y][x].alive) {
+
             //Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
-            if(neighbours < 2){
-                cells[y][x].alive = false;
+            if (neighbours < 2) {
+                cells[y][x].nextState = false;
             }//Any live cell with more than three live neighbours dies, as if by overpopulation.
-            else if(neighbours > 3){
-                cells[y][x].alive = false;
+            else if (neighbours > 3) {
+                cells[y][x].nextState = false;
             }
-        }else{
+            else if(neighbours == 2 || neighbours == 3){
+
+                cells[y][x].nextState = true;
+            }
+        } else {
             //Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-            if(neighbours == 3 && cells[y][x].alive){
-                cells[y][x].alive = true;
+            if (neighbours == 3 && cells[y][x].alive == false) {
+                cells[y][x].nextState = true;
             }
         }
     }
 
-    int calculateBoard(){
 
-        for(int y = 0; y < columns; y++){
-            for(int x = 0; x < rows; x++){
-                cellNextCycle(x,y);
+    int calculateBoard() {
+        for (int y = 0; y < columns; y++) {
+            for (int x = 0; x < rows; x++) {
+                cellNextCycle(x, y);
+            }
+        }
+
+        for (int y = 0; y < columns; y++) {
+            for (int x = 0; x < rows; x++) {
+
+                cells[y][x].alive = cells[y][x].nextState;
             }
         }
     }
 
 };
-
 
 int main() {
 
@@ -239,13 +291,12 @@ int main() {
     Board.columns = 5;
 
     Board.populateBoard();
-    Board.printBoard();
-    Board.calculateBoard();
-    Board.printBoard();
-    Board.calculateBoard();
-    Board.printBoard();
-    Board.calculateBoard();
-    Board.printBoard();
+    int x = 0;
+    while(x < 10){
+        Board.printBoard();
+        Board.calculateBoard();
+        x++;
+    }
 
     return 0;
 }
