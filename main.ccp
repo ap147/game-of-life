@@ -18,7 +18,12 @@ public:
     int printBoard() {
         for (int y = 0; y < columns; y++) {
             for (int x = 0; x < rows; x++) {
-                std::cout << cells[y][x].alive;
+                if (cells[y][x].alive){
+                    std::cout << "[-]";
+                }else{
+                    std::cout << "[ ]";
+                }
+
             }
             std::cout << "" << std::endl;
         }
@@ -26,10 +31,20 @@ public:
         return 0;
     }
 
-    int setBoardValues() {
+    int setBlinker(){
         cells[1][2].alive = true;
         cells[2][2].alive = true;
         cells[3][2].alive = true;
+    }
+
+    int setGlider(){
+        cells[0][1].alive = true;
+
+        cells[1][2].alive = true;
+
+        cells[2][0].alive = true;
+        cells[2][1].alive = true;
+        cells[2][2].alive = true;
     }
 
     int populateBoard() {
@@ -42,7 +57,7 @@ public:
             cells[i][rows].nextState = false;
         }
 
-        setBoardValues();
+        setGlider();
 
         return 0;
     }
@@ -292,7 +307,8 @@ int main() {
 
     Board.populateBoard();
     int x = 0;
-    while(x < 10){
+    while(x < 20){
+        std::cout << "Count : " << x << std::endl;
         Board.printBoard();
         Board.calculateBoard();
         x++;
