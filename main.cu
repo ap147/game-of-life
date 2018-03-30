@@ -1,46 +1,70 @@
+// Amarjot Singh Parmar
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
 
-__device__ float *a;
-
-// Kernel function to add the elements of two arrays
-__global__
-void add(int n, float *x, float *y)
-{
-	  int index = threadIdx.x;
-	  int stride = blockDim.x;
-
-  for (int i = index; i < n; i += stride)
-    y[i] = x[i] + y[i];
-}
 
 __global__
-void print(int size, int *x, int *y, int *alive)
-{
-	  int index = threadIdx.x;
-	  int stride = blockDim.x;
+void print(int *gen, int amount){
+	
+	printf("\nPrinting Current Gen Array !! [x,y,alive] \n");
+	printf("[\n");
 
-	  for (int i = index; i < size; i += stride)
-	  printf("COUNT : %d -- x : %d, y : %d , alive : %d \n", x[i], y[i], alive[i]);
-}
-
-__global__
-void printBoard(int size, int *alive)
-{
 	int count = 0;
-	// initialize x and y arrays on the host
-	for (int y = 0; y < size; y++) {
+
+	while(count < amount){
+		printf("x : %d, y : %d, alive : %d \n", gen[count], gen[count + 1], gen[count + 2]);
+		count = count + 3;
+	}
+
+	printf("]");
+}
+
+// I can do this in parallel right ?
+__global__
+void printBoard(int *gen ,int amountofCells, int size){
+
+	int count = 0;
+	int rowCount = 0;
+	printf("\n");
+	while(count < amountofCells){
+		count++;
+		count++;
+		if(gen[count] == 0){
+			printf(" . ");
+		}else{
+			printf(" x ");
+		}
+		rowCount++;
+
+		if(rowCount == size){
+			printf("\n");
+			rowCount = 0;
+		}
+
+		count++;
+		
+	}
+}
+
+// I can do this in parallel right ?
+__global__
+void populateArrays(int *gen, int *newGen, int size){
+	
+	int count = 0;
+    for (int y = 0; y < size; y++) {
 		for(int x = 0; x < size; x++){
-			if(alive[count] == 1){
-				printf(" x ");
-			}
-			else{
-				printf(" . ");
-			}
+
+			gen[count] = x;
+			newGen[count] = x;
+			count++;
+			gen[count] = y;
+			newGen[count] = y;
+			count++;
+			gen[count] = 0;
+			newGen[count] = 0;
 			count++;
 		}
-		printf(" \n");
 	}
 }
 
@@ -51,65 +75,42 @@ void getIndex(int x, int y, int size){
 	result = result + x;
 }
 
-int main(void)
-{
-  int *xPos, *yPos, *alive, *nextState;
-  int size = 30;
-  int amount = size * size;
-  int count = 0;
+__global__
+void calculateCells(int *gen, int *newGen){
 
+}
 
-  // Allocate Unified Memory – accessible from CPU or GPU
-  cudaMallocManaged(&xPos, amount*sizeof(int));
-  cudaMallocManaged(&yPos, amount*sizeof(int));
-  cudaMallocManaged(&alive, amount*sizeof(int));
-  cudaMallocManaged(&nextState, amount*sizeof(int));
+int main(void){
+	
+	int *gen, *newGen;
+	int size = 5;
+	int amountofCells = size * size;
+	int lengthofArray = ((amountofCells * 2) + amountofCells);
+	int loopCount = 0;
+	
+	printf("User wants size : %d , Total Cells needed : %d , Array Size : %d \n", size, (size * size), lengthofArray);
 
-  // initialize x and y arrays on the host
-  for (int y = 0; y < size; y++) {
-	  for(int x = 0; x < size; x++){
-		  xPos[count] = x;
-		  yPos[count] = y;
-		  alive[count] = 0;
-		  nextState[count] = 0;
-		  count++;
-	  }
-  }
+	// Allocate Unified Memory – accessible from CPU or GPU
+    cudaMallocManaged(&gen, lengthofArray*sizeof(int));
+	cudaMallocManaged(&newGen, lengthofArray*sizeof(int));
 
-  // Get GPU to do this.
-  int result;
-	result = 0 * size;
-	result = result + 1;
-	alive[result] = 1;
+	// populate board
+	populateArrays<<<1,1>>>(gen, newGen, size);
 
-	result = 1 * size;
-	result = result + 2;
-	alive[result] = 1;
+	// setting up glider
 
-	result = 2 * size;
-	result = result + 0;
-	alive[result] = 1;
+	// Keep calculating board & printing
 
-	result = 2 * size;
-	result = result + 1;
-	alive[result] = 1;
-
-	result = 2 * size;
-	result = result + 2;
-	alive[result] = 1;
-
-  printBoard<<<1, 1>>>(size, alive);
-
-  // setupGlider<<<1,1>>>(xPos, yPos, alive);
-  // Wait for GPU to finish before accessing on host
-  cudaDeviceSynchronize();
-
-  // Free memory
-  cudaFree(xPos);
-  cudaFree(yPos);
-  cudaFree(alive);
-  cudaFree(nextState);
-
-  return 0;
+	while(loopCount < 1){
+		printBoard<<<1,1>>>(gen, lengthofArray, size);
+		loopCount++;
+	}
+	
+	// Wait for GPU to finish before accessing on host
+	cudaDeviceSynchronize();
+	// Free memory
+	cudaFree(gen);
+	cudaFree(newGen);
+	return 0;
 }
 

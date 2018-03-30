@@ -1,5 +1,5 @@
-all: main
-	g++ -o main main.cpp
+all: maincu
+	nvcc -o maincu main.cu 
 
-run: main
-	./main
+run: maincu
+	./maincu
