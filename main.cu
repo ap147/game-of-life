@@ -8,15 +8,21 @@ __device__ float *a;
 __global__
 void add(int n, float *x, float *y)
 {
-  for (int i = 0; i < n; i++)
+	  int index = threadIdx.x;
+	  int stride = blockDim.x;
+
+  for (int i = index; i < n; i += stride)
     y[i] = x[i] + y[i];
 }
 
 __global__
 void print(int size, int *x, int *y, int *alive)
 {
-  for (int i = 0; i < 9; i++)
-	  printf("x : %d, y : %d , alive : %d \n", x[i], y[i], alive[i]);
+	  int index = threadIdx.x;
+	  int stride = blockDim.x;
+
+	  for (int i = index; i < size; i += stride)
+	  printf("COUNT : %d -- x : %d, y : %d , alive : %d \n", x[i], y[i], alive[i]);
 }
 
 __global__
@@ -48,18 +54,16 @@ void getIndex(int x, int y, int size){
 int main(void)
 {
   int *xPos, *yPos, *alive, *nextState;
-  int size = 3;
-  int count = 0<<0;
-  const size_t sz = 10 * sizeof(float);
-  float *ah;
-     cudaMalloc((void **)&ah, sz);
-     cudaMemcpyToSymbol("a", &ah, sizeof(float *), size_t(0),cudaMemcpyHostToDevice);
+  int size = 30;
+  int amount = size * size;
+  int count = 0;
+
 
   // Allocate Unified Memory – accessible from CPU or GPU
-  cudaMallocManaged(&xPos, size*sizeof(int));
-  cudaMallocManaged(&yPos, size*sizeof(int));
-  cudaMallocManaged(&alive, size*sizeof(int));
-  cudaMallocManaged(&nextState, size*sizeof(int));
+  cudaMallocManaged(&xPos, amount*sizeof(int));
+  cudaMallocManaged(&yPos, amount*sizeof(int));
+  cudaMallocManaged(&alive, amount*sizeof(int));
+  cudaMallocManaged(&nextState, amount*sizeof(int));
 
   // initialize x and y arrays on the host
   for (int y = 0; y < size; y++) {
@@ -72,12 +76,8 @@ int main(void)
 	  }
   }
 
-
-  // Run kernel on 1M elements on the GPU
-  print<<<1, 1>>>(size, xPos, yPos, alive);
-
-
-	int result;
+  // Get GPU to do this.
+  int result;
 	result = 0 * size;
 	result = result + 1;
 	alive[result] = 1;
@@ -97,28 +97,12 @@ int main(void)
 	result = 2 * size;
 	result = result + 2;
 	alive[result] = 1;
-/*
- *
-  getIndex<<<1,1>>>(1, 0, size, result);
-  alive[result] = 1;
-  getIndex<<<1,1>>>(2, 1, size, result);
-  printf("result : %d \n",result);
-  alive[result] = 1;
-  getIndex<<<1,1>>>(0, 2, size, result);
-  alive[result] = 1;
-  getIndex<<<1,1>>>(1, 2, size, result);
-  alive[result] = 1;
-  getIndex<<<1,1>>>(2, 2, size, result);
-  alive[result] = 1;
 
-  print<<<1, 1>>>(size, xPos, yPos, alive);
-*/
-	cudaDeviceSynchronize();
   printBoard<<<1, 1>>>(size, alive);
+
   // setupGlider<<<1,1>>>(xPos, yPos, alive);
   // Wait for GPU to finish before accessing on host
   cudaDeviceSynchronize();
-
 
   // Free memory
   cudaFree(xPos);
@@ -128,3 +112,4 @@ int main(void)
 
   return 0;
 }
+
