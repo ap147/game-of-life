@@ -332,8 +332,8 @@ Board.populateBoard();
 std::cout << "Board Populated : " << std::endl;
 Board.printBoard();
 int x = 0;
-while(x < 201){
-usleep(1000);
+while(x < 20100){
+usleep(9000);
 std::cout << "Count : " << x << std::endl;
 Board.printBoard();
 Board.calculateBoard();
