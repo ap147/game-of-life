@@ -41,9 +41,7 @@ void printBoard(int *gen ,int amountofCells, int size){
 			printf("\n");
 			rowCount = 0;
 		}
-
 		count++;
-		
 	}
 }
 
@@ -68,15 +66,79 @@ void populateArrays(int *gen, int *newGen, int size){
 	}
 }
 
-__global__
-void getIndex(int x, int y, int size){
+__device__
+int getIndex(int x, int y, int size){
+	// (size * 3) * y + (x * 3)
 	int result;
-	result = y * size;
-	result = result + x;
+	result = (size * 3) * y;
+	result = result + (x * 3);
+	return result;
 }
 
+__global__ 
+void setupGlider(int *gen, int size){
+
+	int index;
+	index = getIndex(1,0,size) + 2;
+	gen[index] = 1;
+
+	index = getIndex(2,1,size) + 2;
+	gen[index] = 1;
+
+	index = getIndex(0,2,size) + 2;
+	gen[index] = 1;
+
+	index = getIndex(1,2,size) + 2;
+	gen[index] = 1;
+
+	index = getIndex(2,2,size) + 2;
+	gen[index] = 1;
+}
+
+
+__device__
+int getCellNeighbours(int xPos, int yPos){
+	return 0;
+}
+__device__
+void cellNextCycle(int *gen, int *newGen, int n){
+	int neighbours = 0;
+
+	  // Any live cell
+	if (gen[2]== 1)
+	{
+		//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
+		if (neighbours < 2)
+		{
+			//cells[y][x].nextState = 0;
+		} //Any live cell with more than three live neighbours dies, as if by overpopulation.
+		else if (neighbours == 2 || neighbours == 3)
+		{
+			//cells[y][x].nextState = 1;
+		}
+		else if (neighbours > 3)
+		{
+			//cells[y][x].nextState = 0;
+		}
+	}
+	else
+	{
+		//Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+		if (neighbours == 3 && gen[3] == 0)
+		{
+			//cells[y][x].nextState = 1;
+		}
+	}
+}
+
+// Gets every cells next value which gets stored in newGen
+// 
 __global__
-void calculateCells(int *gen, int *newGen){
+void calculateBoard(int *gen, int *newGen){
+
+
+
+
 
 }
 
@@ -97,12 +159,13 @@ int main(void){
 	// populate board
 	populateArrays<<<1,1>>>(gen, newGen, size);
 
-	// setting up glider
+	// set up glider
+	setupGlider<<<1,1>>>(gen, size);
 
 	// Keep calculating board & printing
-
 	while(loopCount < 1){
 		printBoard<<<1,1>>>(gen, lengthofArray, size);
+		//calculateBoard<<1,amountofCells>>>(gen, newGen);
 		loopCount++;
 	}
 	
