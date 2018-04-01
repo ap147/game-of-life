@@ -104,7 +104,7 @@ __device__
 void cellNextCycle(int *gen, int *newGen, int n){
 	int neighbours = 0;
 
-	  // Any live cell
+	// Any live cell
 	if (gen[2]== 1)
 	{
 		//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
@@ -132,11 +132,8 @@ void cellNextCycle(int *gen, int *newGen, int n){
 }
 
 // Gets every cells next value which gets stored in newGen
-// 
 __global__
 void calculateBoard(int *gen, int *newGen){
-
-
 
 
 
