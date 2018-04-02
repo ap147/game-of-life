@@ -348,10 +348,10 @@ void cellNextCycle(int *gen, int *newGen, int index, int rows, int columns){
 	int neighbours = 0;
 	neighbours = getCellNeighbours(index, gen, rows, columns);
 	
-	printf("\nx : %d , y : %d. neighbours : %d \n", gen[index], gen[index + 1], neighbours);
+	// /printf("\nx : %d , y : %d. neighbours : %d", gen[index], gen[index + 1], neighbours);
 
 	// Any live cell
-	if (gen[index + 2]== 1)
+	if (gen[index + 2] == 1)
 	{
 		//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
 		if (neighbours < 2)
@@ -383,19 +383,15 @@ void calculateBoard(int *gen, int *newGen, int amountofCells, int switchh, int r
 {
 	int count = 0;
 
-	if (switchh % 2 == 0){
-		for(int x = 0; x < amountofCells; x++){
-			cellNextCycle(gen, newGen, count, rows, columns);
-			count = count + 3;
-		}
+	for(int x = 0; x < amountofCells; x++){
+		cellNextCycle(gen, newGen, count, rows, columns);
+		count = count + 3;
 	}
-	else
-	{
-		for(int x = 0; x < amountofCells; x++){
-			cellNextCycle(newGen, gen, count, rows, columns);
-			count = count + 3;
-		}
-	}
+	
+
+	for(int x = 0; x < ((amountofCells * 3) -1); x++){
+		gen[x] = newGen[x];
+	}	
 }
 
 int getIndexCPU(int x, int y, int rows){
@@ -490,8 +486,8 @@ int main(void){
 	
 	int *gen, *newGen;
 
-	int rows = 5;
-	int columns = 5;
+	int rows = 50;
+	int columns = 50;
 	int amountofCells = rows * columns;
 	int lengthofArray = ((amountofCells * 2) + amountofCells);
 	int loopCount = 0;
@@ -510,27 +506,18 @@ int main(void){
 	cudaDeviceSynchronize();
 
 	// Keep calculating board & printing
-	while(loopCount < 3){
+	while(loopCount < 30){
 
 		calculateBoard<<<1,1>>>(gen, newGen, amountofCells, loopCount, rows, columns);
-		
 		cudaDeviceSynchronize();
-
-		if (loopCount % 2 == 0){
-			printBoard(gen, lengthofArray, rows);
-			//print(gen, lengthofArray);
-		}
-		else
-		{
-			printBoard(newGen, lengthofArray, rows);
-			//print(newGen, lengthofArray);
-		}
+		printBoard(gen, lengthofArray, rows);
 		
 		loopCount++;
 	}
 
 	// Wait for GPU to finish before accessing on host
 	cudaDeviceSynchronize();
+
 	// Free memory
 	cudaFree(gen);
 	cudaFree(newGen);
