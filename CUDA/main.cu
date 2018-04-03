@@ -2,6 +2,7 @@
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
+#include <unistd.h>
 
 __device__
 int getIndex(int x, int y, int rows){
@@ -38,22 +39,23 @@ void printBoardd(int *gen ,int amountofCells, int rows){
 __device__
 int checkLeft(int index, int *gen, int rows)
 {
-	int xNeighbour;
-	int yNeighbour;
+	int indexNeighbour;
+
 	int x = gen[index];
 	int y = gen[index + 1];
 
 	// 1
-	if (gen[index] == 0)
+	if (x == 0)
 	{
-		xNeighbour = getIndex(rows - 1, y, rows);
+		indexNeighbour = getIndex((rows - 1), y, rows);
 	} // 2
 	else
 	{
-		xNeighbour = index - 3;
+		indexNeighbour = getIndex((x - 1), y, rows);
+		//indexNeighbour = index - 3;
 	}
 
-	if (gen[xNeighbour + 2] == 1)
+	if (gen[indexNeighbour + 2] == 1)
 	{
 		return 1;
 	}
@@ -66,18 +68,22 @@ int checkLeft(int index, int *gen, int rows)
 __device__
 int checkRight(int index, int *gen, int rows)
 {
-	int xNeighbour;
+	int indexNeighbour;
+
+	int x = gen[index];
+	int y = gen[index + 1];
+
 	// 1
-	if (gen[index] == rows -1)
+	if (x == rows -1)
 	{
-		xNeighbour = 0;
+		indexNeighbour = getIndex(0, y, rows);
 	} // 2
 	else
 	{
-		xNeighbour = index + 3;
+		indexNeighbour = getIndex((x + 1), y, rows);
 	}
 
-	if (gen[xNeighbour + 2] == 1)
+	if (gen[indexNeighbour + 2] == 1)
 	{
 		return 1;
 	}
@@ -90,18 +96,22 @@ int checkRight(int index, int *gen, int rows)
 __device__
 int checkTop(int index, int *gen, int rows, int columns)
 {
-	int yNeighbour;
+	int indexNeighbour;
+
+	int x = gen[index];
+	int y = gen[index + 1];
+	
 	// 1
-	if (gen[index+1] == 0)
+	if (y == 0)
 	{
-		yNeighbour = getIndex(gen[index], columns - 1 , rows);
+		indexNeighbour = getIndex(x , columns - 1, rows);
 	} // 2
 	else
 	{
-		yNeighbour = getIndex(gen[index], (gen[index + 1]- 1), rows);
+		indexNeighbour = getIndex(x , (y - 1), rows);
 	}
 
-	if (gen[yNeighbour + 2] == 1)
+	if (gen[indexNeighbour + 2] == 1)
 	{
 		return 1;
 	}
@@ -114,19 +124,22 @@ int checkTop(int index, int *gen, int rows, int columns)
 __device__
 int checkBottom(int index, int *gen, int rows, int columns)
 {
-	int yNeighbour;
+	int indexNeighbour;
+
+	int x = gen[index];
+	int y = gen[index + 1];;
 
 	// 1
-	if (gen[index+1] == columns - 1)
+	if (y == columns - 1)
 	{
-		yNeighbour = getIndex(gen[index], 0 , rows);
+		indexNeighbour = getIndex(x , 0 , rows);
 	} // 2
 	else
 	{
-		yNeighbour = getIndex(gen[index], (gen[index + 1] + 1), rows);
+		indexNeighbour = getIndex(x, (y + 1), rows);
 	}
 	
-	if (gen[yNeighbour + 2] == 1) 
+	if (gen[indexNeighbour + 2] == 1) 
 	{
 		return 1;
 	}
@@ -139,9 +152,11 @@ int checkBottom(int index, int *gen, int rows, int columns)
 __device__
 int checkDiagonalTL(int index, int *gen, int rows, int columns)
 {
-	int neighbourIndex;
-	int x = gen[index]; 
+	int indexNeighbour;
+
+	int x = gen[index];
 	int y = gen[index + 1];
+
 	int xNeighbour; 
 	int yNeighbour;
 
@@ -150,19 +165,19 @@ int checkDiagonalTL(int index, int *gen, int rows, int columns)
 	{
 		xNeighbour = rows - 1;
 		yNeighbour = columns - 1;
-		neighbourIndex = getIndex(xNeighbour, yNeighbour, rows);
+		indexNeighbour = getIndex(xNeighbour, yNeighbour, rows);
 	}
 	// 2
 	else if (y == 0)
 	{
 		xNeighbour = x - 1;
 		yNeighbour = columns - 1;
-		neighbourIndex = getIndex(xNeighbour, yNeighbour, rows);
+		indexNeighbour = getIndex(xNeighbour, yNeighbour, rows);
 	}
 	// 3
 	else if (x == 0)
 	{
-		neighbourIndex = index - 3;//getIndex((rows - 1), gen[index - 2));
+		indexNeighbour = getIndex((rows -1), y - 1, rows);//index - 3;//getIndex((rows - 1), gen[index - 2));
 	}
 	// 4
 	else
@@ -170,10 +185,10 @@ int checkDiagonalTL(int index, int *gen, int rows, int columns)
 		xNeighbour = x - 1;
 		yNeighbour = y - 1;
 
-		neighbourIndex = getIndex(xNeighbour, yNeighbour, rows);
+		indexNeighbour = getIndex(xNeighbour, yNeighbour, rows);
 	}
 
-	if (gen[neighbourIndex + 2] == 1) //cells[y][xNeighbour].alive == 1)
+	if (gen[indexNeighbour + 2] == 1) //cells[y][xNeighbour].alive == 1)
 	{
 		return 1;
 	}
@@ -238,12 +253,13 @@ int checkDiagonalBL(int index, int *gen, int rows, int columns)
 	int y = gen[index + 1];
 	int xNeighbour; 
 	int yNeighbour;
+
 	// 1
 	if (x == 0 && y == (columns -1))
 	{
 		xNeighbour = rows - 1;
 		yNeighbour = 0;
-		neighbourIndex = getIndex(x, y, rows);
+		neighbourIndex = getIndex(xNeighbour, yNeighbour, rows);
 	}
 	// 2
 	else if (y == (columns - 1))
@@ -262,7 +278,7 @@ int checkDiagonalBL(int index, int *gen, int rows, int columns)
 	// 4
 	else
 	{
-		neighbourIndex = getIndex(x - 1, y + 1, rows);
+		neighbourIndex = getIndex((x - 1), (y + 1), rows);
 	}
 
 	if (gen[neighbourIndex + 2] == 1) 
@@ -283,12 +299,13 @@ int checkDiagonalBR(int index, int *gen, int rows, int columns)
 	int y = gen[index + 1];
 	int xNeighbour; 
 	int yNeighbour;
+
 	// 1
 	if (x == (rows - 1) && y == (columns -1))
 	{
 		xNeighbour = 0;
 		yNeighbour = 0;
-		neighbourIndex = getIndex(x, y, rows);
+		neighbourIndex = 0;
 	}
 	// 2
 	else if (y == (columns - 1))
@@ -300,12 +317,12 @@ int checkDiagonalBR(int index, int *gen, int rows, int columns)
 	// 3
 	else if (x == (rows - 1))
 	{
-		neighbourIndex = index + 3;
+		neighbourIndex = getIndex(0, (y + 1), rows);
 	}
 	// 4
 	else
 	{
-		neighbourIndex = getIndex(x + 1, y + 1, rows);
+		neighbourIndex = getIndex((x + 1), (y + 1), rows);
 	}
 
 	if (gen[neighbourIndex + 2] == 1) 
@@ -330,7 +347,7 @@ int getCellNeighbours(int index, int *gen, int rows, int columns){
 	neighbours = neighbours + checkDiagonalBL(index, gen, rows, columns);
 	neighbours = neighbours + checkDiagonalBR(index, gen, rows, columns);
 	/*
-	printf(" x : %d , y : %d. Check LEft neighbours : %d \n", gen[index], gen[index + 1], neighbours);
+	printf(" x : %d , y : %d. Check LEft neighbours : %d \n", gen[index], gen[index + 1], checkLeft(index, gen, rows));
 	printf(" x : %d , y : %d. Check right neighbours : %d \n", gen[index], gen[index + 1], checkRight(index, gen, rows));
 	printf(" x : %d , y : %d. Check Top neighbours : %d \n", gen[index], gen[index + 1], checkTop(index, gen, rows, columns));
 	printf(" x : %d , y : %d. Check B neighbours : %d \n", gen[index], gen[index + 1], checkBottom(index, gen, rows, columns));
@@ -339,6 +356,8 @@ int getCellNeighbours(int index, int *gen, int rows, int columns){
 	printf(" x : %d , y : %d. Check BL neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalBL(index, gen, rows, columns));
 	printf(" x : %d , y : %d. Check BR neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalBR(index, gen, rows, columns));
 	*/
+/*
+	printf(" x : %d , y : %d. Total Neighbours : %d \n", gen[index], gen[index + 1], neighbours);*/
 	return neighbours;
 }
 
@@ -369,8 +388,9 @@ void cellNextCycle(int *gen, int *newGen, int index, int rows, int columns){
 	}
 	else
 	{
+		//printf("DEAD BECOMES ALIVE : x : %d , y : %d \n", gen[index], gen[index + 1]);
 		//Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-		if (neighbours == 3 && gen[index + 2] == 0)
+		if (neighbours == 3)
 		{
 			newGen[index + 2] = 1;
 		}
@@ -389,7 +409,7 @@ void calculateBoard(int *gen, int *newGen, int amountofCells, int switchh, int r
 	}
 	
 
-	for(int x = 0; x < ((amountofCells * 3) -1); x++){
+	for(int x = 0; x < ((amountofCells * 3)); x++){
 		gen[x] = newGen[x];
 	}	
 }
@@ -503,11 +523,13 @@ int main(void){
 
 	// set up glider
 	setupGlider(gen, newGen, rows);
+
 	cudaDeviceSynchronize();
 
 	// Keep calculating board & printing
-	while(loopCount < 30){
-
+	while(loopCount < 900 ){
+		printf("Count : %d", loopCount);
+		usleep(9000);
 		calculateBoard<<<1,1>>>(gen, newGen, amountofCells, loopCount, rows, columns);
 		cudaDeviceSynchronize();
 		printBoard(gen, lengthofArray, rows);
