@@ -14,29 +14,6 @@ int getIndex(int x, int y, int rows){
 }
 
 __device__
-void printBoardd(int *gen ,int amountofCells, int rows){
-
-	int count = 0;
-	int rowCount = 0;
-	printf("\n");
-	while(count < amountofCells){
-		count++;
-		count++;
-		if(gen[count] == 0){
-			printf(" . ");
-		}else{
-			printf(" x ");
-		}
-		rowCount++;
-
-		if(rowCount == rows){
-			printf("\n");
-			rowCount = 0;
-		}
-		count++;
-	}
-}
-__device__
 int checkLeft(int index, int *gen, int rows)
 {
 	int indexNeighbour;
@@ -346,18 +323,7 @@ int getCellNeighbours(int index, int *gen, int rows, int columns){
 	neighbours = neighbours + checkDiagonalTR(index, gen, rows, columns);
 	neighbours = neighbours + checkDiagonalBL(index, gen, rows, columns);
 	neighbours = neighbours + checkDiagonalBR(index, gen, rows, columns);
-	/*
-	printf(" x : %d , y : %d. Check LEft neighbours : %d \n", gen[index], gen[index + 1], checkLeft(index, gen, rows));
-	printf(" x : %d , y : %d. Check right neighbours : %d \n", gen[index], gen[index + 1], checkRight(index, gen, rows));
-	printf(" x : %d , y : %d. Check Top neighbours : %d \n", gen[index], gen[index + 1], checkTop(index, gen, rows, columns));
-	printf(" x : %d , y : %d. Check B neighbours : %d \n", gen[index], gen[index + 1], checkBottom(index, gen, rows, columns));
-	printf(" x : %d , y : %d. Check TL neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalTL(index, gen, rows, columns));
-	printf(" x : %d , y : %d. Check TR neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalTR(index, gen, rows, columns));
-	printf(" x : %d , y : %d. Check BL neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalBL(index, gen, rows, columns));
-	printf(" x : %d , y : %d. Check BR neighbours : %d \n", gen[index], gen[index + 1], checkDiagonalBR(index, gen, rows, columns));
-	*/
-/*
-	printf(" x : %d , y : %d. Total Neighbours : %d \n", gen[index], gen[index + 1], neighbours);*/
+	
 	return neighbours;
 }
 
@@ -386,32 +352,29 @@ void cellNextCycle(int *gen, int *newGen, int index, int rows, int columns){
 			newGen[index + 2] = 0;
 		}
 	}
-	else
+	else if (neighbours == 3)
 	{
 		//printf("DEAD BECOMES ALIVE : x : %d , y : %d \n", gen[index], gen[index + 1]);
 		//Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-		if (neighbours == 3)
-		{
-			newGen[index + 2] = 1;
-		}
+		newGen[index + 2] = 1;
 	}
+	else{
+		newGen[index + 2] = 0;
+ 	}
 }
 
 // Gets every cells next value which gets stored in newGen
 __global__
-void calculateBoard(int *gen, int *newGen, int amountofCells, int switchh, int rows, int columns)
+void calculateBoard(int *gen, int *newGen, int amountofCells, int rows, int columns)
 {
-	int count = 0;
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-	for(int x = 0; x < amountofCells; x++){
-		cellNextCycle(gen, newGen, count, rows, columns);
-		count = count + 3;
+	if(index >= amountofCells){
+		return;
 	}
-	
+	int count = index * 3;
 
-	for(int x = 0; x < ((amountofCells * 3)); x++){
-		gen[x] = newGen[x];
-	}	
+	cellNextCycle(gen, newGen, count, rows, columns);
 }
 
 int getIndexCPU(int x, int y, int rows){
@@ -484,19 +447,16 @@ void setupGlider(int *gen, int *newGen, int rows){
 	newGen[index] = 1;
 }
 
-void populateArrays(int *gen, int *newGen, int rows, int columns){
+void populateArray(int *gen, int rows, int columns){
 	
 	int count = 0;
     for (int y = 0; y < columns; y++) {
 		for(int x = 0; x < rows; x++){
 			gen[count] = x;
-			newGen[count] = x;
 			count++;
 			gen[count] = y;
-			newGen[count] = y;
 			count++;
-			gen[count] = 0;
-			newGen[count] = 0;
+			gen[count] = 0;;
 			count++;
 		}
 	}
@@ -507,10 +467,12 @@ int main(void){
 	int *gen, *newGen;
 
 	int rows = 50;
-	int columns = 50;
+	int columns = 60;
 	int amountofCells = rows * columns;
 	int lengthofArray = ((amountofCells * 2) + amountofCells);
 	int loopCount = 0;
+
+	int amountOFBlocks = (amountofCells / 1024) + 1; 
 	
 	printf("User wants %d X %d , Total Cells needed : %d , Array Size : %d \n", rows , columns, amountofCells, lengthofArray);
 
@@ -519,20 +481,27 @@ int main(void){
 	cudaMallocManaged(&newGen, lengthofArray*sizeof(int));
 
 	// populate board
-	populateArrays(gen, newGen, rows, columns);
-
+	populateArray(gen, rows, columns);
+	populateArray(newGen, rows, columns);
 	// set up glider
 	setupGlider(gen, newGen, rows);
 
 	cudaDeviceSynchronize();
 
 	// Keep calculating board & printing
-	while(loopCount < 900 ){
-		printf("Count : %d", loopCount);
+	while(loopCount < 300){
 		usleep(9000);
-		calculateBoard<<<1,1>>>(gen, newGen, amountofCells, loopCount, rows, columns);
-		cudaDeviceSynchronize();
-		printBoard(gen, lengthofArray, rows);
+		if((loopCount % 2) == 0){
+			calculateBoard<<<amountOFBlocks,1024>>>(gen, newGen, amountofCells, rows, columns);
+			cudaDeviceSynchronize();
+			printBoard(newGen, lengthofArray, rows);
+	
+		} else{
+			calculateBoard<<<amountOFBlocks,1024>>>(newGen, gen, amountofCells, rows, columns);
+			cudaDeviceSynchronize();
+			printBoard(gen, lengthofArray, rows);
+		}
+
 		
 		loopCount++;
 	}
