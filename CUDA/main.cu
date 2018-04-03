@@ -467,7 +467,7 @@ int main(void){
 	int *gen, *newGen;
 
 	int rows = 50;
-	int columns = 60;
+	int columns = 50;
 	int amountofCells = rows * columns;
 	int lengthofArray = ((amountofCells * 2) + amountofCells);
 	int loopCount = 0;
@@ -489,7 +489,7 @@ int main(void){
 	cudaDeviceSynchronize();
 
 	// Keep calculating board & printing
-	while(loopCount < 300){
+	while(loopCount < 1000){
 		usleep(9000);
 		if((loopCount % 2) == 0){
 			calculateBoard<<<amountOFBlocks,1024>>>(gen, newGen, amountofCells, rows, columns);
